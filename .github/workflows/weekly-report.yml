@@ -1,0 +1,52 @@
+name: Weekly Progress Report
+
+on:
+  schedule:
+    - cron: "30 12 * * 4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Create weekly_reports directory
+        run: mkdir -p weekly_reports
+
+      - name: Generate last 4 weekly reports
+        run: python generate_report.py last4
+
+      - name: Move reports
+        run: |
+          mv *.pdf weekly_reports/ 2>/dev/null || true
+
+      - name: Commit reports
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add weekly_reports/
+
+          if git diff --cached --quiet; then
+            echo "No new reports to commit."
+          else
+            git commit -m "Generate last 4 weekly progress reports"
+            git push
+          fi
