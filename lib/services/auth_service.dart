@@ -5,12 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthResult {
   final bool success;
   final String message;
+
   AuthResult(this.success, this.message);
 }
 
 class AuthService {
-  // Android emulator -> 10.0.2.2 ; iOS simulator -> localhost ; real device -> your PC's LAN IP
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
+  // Flutter Web / Chrome -> localhost
+  static const String baseUrl = 'http://localhost:3000/api';
+
   static const String _tokenKey = 'auth_token';
 
   Future<AuthResult> register({
@@ -22,18 +24,37 @@ class AuthService {
       final res = await http
           .post(
             Uri.parse('$baseUrl/auth/register'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'name': name, 'email': email, 'password': password}),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'name': name,
+              'email': email,
+              'password': password,
+            }),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(
+            const Duration(seconds: 15),
+          );
 
       final body = _decode(res.body);
+
       if (res.statusCode == 200 || res.statusCode == 201) {
-        return AuthResult(true, body['message'] ?? 'Registration successful');
+        return AuthResult(
+          true,
+          body['message'] ?? 'Registration successful',
+        );
       }
-      return AuthResult(false, body['message'] ?? 'Registration failed');
+
+      return AuthResult(
+        false,
+        body['message'] ?? 'Registration failed',
+      );
     } catch (e) {
-      return AuthResult(false, 'Cannot reach server. Check your connection.');
+      return AuthResult(
+        false,
+        'Cannot reach server. Check your connection.',
+      );
     }
   }
 
@@ -45,28 +66,63 @@ class AuthService {
       final res = await http
           .post(
             Uri.parse('$baseUrl/auth/login'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'email': email, 'password': password}),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'email': email,
+              'password': password,
+            }),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(
+            const Duration(seconds: 15),
+          );
 
       final body = _decode(res.body);
-      if (res.statusCode == 200 && body['token'] != null) {
+
+      // Backend may return token directly or inside "data"
+      final data = body['data'];
+
+      final token = body['token'] ??
+          (data is Map<String, dynamic> ? data['token'] : null);
+
+      if (res.statusCode == 200 && token != null) {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_tokenKey, body['token']);
-        return AuthResult(true, 'Login successful');
+
+        await prefs.setString(
+          _tokenKey,
+          token.toString(),
+        );
+
+        return AuthResult(
+          true,
+          body['message'] ?? 'Login successful',
+        );
       }
-      return AuthResult(false, body['message'] ?? 'Invalid email or password');
+
+      return AuthResult(
+        false,
+        body['message'] ?? 'Invalid email or password',
+      );
     } catch (e) {
-      return AuthResult(false, 'Cannot reach server. Check your connection.');
+      return AuthResult(
+        false,
+        'Cannot reach server. Check your connection.',
+      );
     }
   }
 
-  Future<String?> getToken() async =>
-      (await SharedPreferences.getInstance()).getString(_tokenKey);
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
 
-  Future<void> logout() async =>
-      (await SharedPreferences.getInstance()).remove(_tokenKey);
+    return prefs.getString(_tokenKey);
+  }
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.remove(_tokenKey);
+  }
 
   Map<String, dynamic> _decode(String s) {
     try {

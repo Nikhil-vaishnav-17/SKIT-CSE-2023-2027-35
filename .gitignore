@@ -83,3 +83,10 @@ ml-components/data/test_samples/
 
 # --- Notebook outputs ---
 notebooks/**/.ipynb_checkpoints/
+# --- Flutter ---
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+build/
