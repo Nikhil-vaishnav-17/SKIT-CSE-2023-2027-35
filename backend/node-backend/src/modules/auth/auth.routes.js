@@ -10,6 +10,7 @@ const router = express.Router();
  * @access  Public
  */
 router.post('/login', authController.login);
+router.post('/register', authController.register);
 
 /**
  * @route   GET /api/auth/me
