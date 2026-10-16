@@ -42,42 +42,40 @@ DEPARTMENT_NAME = "Department of Computer Science & Engineering"
 # =============================================================
 
 def get_repo_info():
-    """Return the repository name from origin and the active branch."""
+    """Return repository name and current Git branch."""
     repo_name = "Project-Repository"
-    branch_name = os.environ.get("GITHUB_REF_NAME", "")
+    branch_name = "main"
 
-    # Prefer the Git remote name over the local folder name, so the PDF
-    # uses the actual GitHub repository name (not e.g. "Neel Project 2").
     try:
-        remote_url = subprocess.check_output(
-            ["git", "config", "--get", "remote.origin.url"],
+        root_path = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"],
             encoding="utf-8",
             errors="replace",
         ).strip()
-        if remote_url:
-            repo_name = remote_url.rstrip("/").split("/")[-1].replace(".git", "")
+        repo_name = os.path.basename(root_path)
     except Exception:
         try:
-            root_path = subprocess.check_output(
-                ["git", "rev-parse", "--show-toplevel"],
+            remote_url = subprocess.check_output(
+                ["git", "config", "--get", "remote.origin.url"],
                 encoding="utf-8",
                 errors="replace",
             ).strip()
-            repo_name = os.path.basename(root_path)
+            repo_name = (
+                remote_url.rstrip("/")
+                .split("/")[-1]
+                .replace(".git", "")
+            )
         except Exception:
             repo_name = os.path.basename(os.getcwd())
 
-    if not branch_name:
-        try:
-            branch_name = subprocess.check_output(
-                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                encoding="utf-8",
-                errors="replace",
-            ).strip()
-            if branch_name == "HEAD":
-                branch_name = "main"
-        except Exception:
-            branch_name = "main"
+    try:
+        branch_name = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            encoding="utf-8",
+            errors="replace",
+        ).strip()
+    except Exception:
+        pass
 
     return repo_name, branch_name
 
@@ -1065,19 +1063,6 @@ def generate_pdf(
     return doc_name
 
 
-def get_latest_thursday_period():
-    """
-    Return one Thursday-to-Thursday reporting period.
-    The end boundary is the most recent Thursday; Git's --until boundary
-    is exclusive, so commits on that end date are intentionally excluded.
-    """
-    today = datetime.date.today()
-    days_since_thursday = (today.weekday() - 3) % 7
-    end_date = today - datetime.timedelta(days=days_since_thursday)
-    start_date = end_date - datetime.timedelta(days=7)
-    return start_date, end_date
-
-
 # =============================================================
 # LAST 4 COMPLETED THURSDAY-TO-THURSDAY WEEKS
 # =============================================================
@@ -1170,12 +1155,9 @@ Usage:
     python generate_report.py weekly
         Generate the current rolling 7-day report.
 
-    python generate_report.py thursday
-        Generate one Thursday-to-Thursday weekly report.
-
     python generate_report.py last4
         Generate the last 4 separate Thursday-to-Thursday
-        weekly reports (manual/backfill only).
+        weekly reports.
 
     python generate_report.py monthly
         Generate the current 30-day report.
@@ -1195,15 +1177,6 @@ if __name__ == "__main__":
 
     if chosen_interval == "last4":
         generate_last_four_weeks()
-
-    elif chosen_interval == "thursday":
-        start_date, end_date = get_latest_thursday_period()
-        generate_pdf(
-            interval="weekly",
-            start_date=start_date,
-            end_date=end_date,
-            filename_date=end_date,
-        )
 
     elif chosen_interval in {
         "weekly",
