@@ -69,13 +69,14 @@ app.get('/api/health', (req, res) => {
 });
 
 const authRoutes = require('./modules/auth/auth.routes');
+const classRoutes = require('./modules/classes/classes.routes');
 
 // =============================================
-// API ROUTES (will be added as modules are built)
+// API ROUTES
 // =============================================
 
 app.use('/api/auth', authRoutes);
-// TODO: app.use('/api/classes', classRoutes);
+app.use('/api/classes', classRoutes);
 // TODO: app.use('/api/sessions', sessionRoutes);
 // TODO: app.use('/api/enrollments', enrollmentRoutes);
 // TODO: app.use('/api/attendance', attendanceRoutes);
