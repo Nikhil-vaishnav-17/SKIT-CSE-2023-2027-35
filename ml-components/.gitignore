@@ -1,0 +1,48 @@
+# Biometric face data and intermediate artifacts (strictly restricted)
+data/
+artifacts/
+logs/
+
+# Model weights: exclude binary ONNX/pth files but keep committed MANIFEST
+models/*
+!models/MANIFEST
+
+# Python runtime and environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Build artifacts
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & quality
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Local environment secrets
+.env
+.env.local
+
